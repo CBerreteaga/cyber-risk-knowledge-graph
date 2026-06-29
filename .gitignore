@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environments
+.env
+.venv/
+venv/
+
+# RDF/graph output files
+*.ttl
+*.nt
+*.rdf
+*.db
+
+# OS/editor files
+
+.DS_Store
+desktop.ini
+.vscode/
