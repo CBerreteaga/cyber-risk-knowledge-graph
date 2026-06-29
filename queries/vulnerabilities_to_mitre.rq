@@ -4,3 +4,4 @@ SELECT ?vulnerability ?mitre_technique
 WHERE {
     ?vulnerability cyber:mapsToTechnique ?mitre_technique.
 }
+LIMIT 10

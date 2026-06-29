@@ -4,4 +4,4 @@ SELECT ?vulnerability ?threat_actor
 WHERE {
     ?vulnerability cyber:isExploitedBy ?threat_actor.
 }
-
+LIMIT 10

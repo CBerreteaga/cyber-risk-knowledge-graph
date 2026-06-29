@@ -1,0 +1,13 @@
+PREFIX cyber: <http://example.org/cyber#>
+
+SELECT ?asset ?vulnerability ?severity ?mitre_technique ?threat_actor
+WHERE {
+    ?asset cyber:hasVulnerability ?vulnerability .
+    ?vulnerability cyber:severity ?severity .
+    ?vulnerability cyber:mapsToTechnique ?mitre_technique .
+    ?vulnerability cyber:isExploitedBy ?threat_actor .
+
+    FILTER(?severity = "Critical")
+}
+
+LIMIT 10

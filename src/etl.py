@@ -8,7 +8,8 @@
 import os
 import platform
 
-from rdflib import Graph, Namespace, URIRef
+# Need literals to get the plain value/text (properties)
+from rdflib import Graph, Namespace, URIRef, Literal
 
 extracting_complete = False
 transforming_complete = False
@@ -122,6 +123,12 @@ def transform_data(records):
         mitre_technique = record["mitre_technique_id"]
         threat_actor = record["threat_actor"]
 
+        asset_type = record["asset_type"]
+        severity = record["severity"]
+        patch_available = record["patch_available"]
+        actor_category = record["actor_category"]
+        mitre_tactic = record["mitre_tactic"]
+
         '''
         print("-----------------------------------------")
         print(f"{asset} hasVulnerability {vulnerability}")
@@ -129,9 +136,16 @@ def transform_data(records):
         print(f"{vulnerability} isExploitedBy {threat_actor}")
         '''
 
-        transformed_records.append((asset, "hasVulnerability", vulnerability))
-        transformed_records.append((vulnerability, "mapsToTechnique", mitre_technique))
-        transformed_records.append((vulnerability, "isExploitedBy", threat_actor))
+        transformed_records.append((asset, "hasVulnerability", vulnerability, "uri"))
+        transformed_records.append((vulnerability, "mapsToTechnique", mitre_technique, "uri"))
+        transformed_records.append((vulnerability, "isExploitedBy", threat_actor, "uri"))
+
+        transformed_records.append((asset, "assetType", asset_type, "literal"))
+        transformed_records.append((vulnerability, "severity", severity, "literal"))
+        transformed_records.append((vulnerability, "patchAvailable", patch_available, "literal"))
+        transformed_records.append((threat_actor, "actorCategory", actor_category, "literal"))
+        transformed_records.append((mitre_technique, "mitreTactic", mitre_tactic, "literal"))
+
 
         
         records_processed += 1
@@ -156,11 +170,18 @@ def load_data(transformed_records):
     rdf_graph.bind("cyber", CYBER)
 
     for record in transformed_records:
-        subject_uri = URIRef(CYBER[make_uri_safe(record[0])])
-        predicate_uri = URIRef(CYBER[make_uri_safe(record[1])])   
-        object_uri = URIRef(CYBER[make_uri_safe(record[2])])
+        subject, predicate, object_value, object_type = record
 
-        rdf_graph.add((subject_uri, predicate_uri, object_uri))
+        subject_uri = URIRef(CYBER[make_uri_safe(subject)])
+        predicate_uri = URIRef(CYBER[make_uri_safe(predicate)])
+
+        if object_type == "uri":
+            object_node = URIRef(CYBER[make_uri_safe(object_value)])
+        else:   
+            object_node = Literal(object_value)
+        
+
+        rdf_graph.add((subject_uri, predicate_uri, object_node))
 
         records_processed += 1
         calculate_percentage_complete(records_processed, len(transformed_records))
@@ -172,7 +193,7 @@ def load_data(transformed_records):
     #Prinouts
     print("ETL Process Complete")
     print("Graph Size:", len(rdf_graph))
-    print("RDF Graph saved to data/cyber_knowledge_graph.rdf")
+    print("RDF Graph saved to data/cyber_knowledge_graph.ttl")
 
     return 0
 

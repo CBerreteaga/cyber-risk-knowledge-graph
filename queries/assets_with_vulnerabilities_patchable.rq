@@ -1,0 +1,11 @@
+PREFIX cyber: <http://example.org/cyber#>
+
+SELECT ?asset ?vulnerability ?patch_available
+WHERE {
+    ?asset cyber:hasVulnerability ?vulnerability.
+    ?vulnerability cyber:patchAvailable ?patch_available.
+    
+    FILTER(LCASE(STR(?patch_available)) = "true")
+}
+
+LIMIT 10

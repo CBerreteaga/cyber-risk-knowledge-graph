@@ -1,0 +1,10 @@
+PREFIX cyber: <http://example.org/cyber#>
+
+SELECT ?vulnerability ?severity ?mitre_technique
+WHERE {
+    ?vulnerability cyber:severity ?severity.
+    ?vulnerability cyber:mapsToTechnique ?mitre_technique.
+
+    FILTER(?severity = "Critical")
+}
+LIMIT 10
