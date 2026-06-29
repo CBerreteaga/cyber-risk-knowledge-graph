@@ -37,3 +37,32 @@ production-web-server-0229 hasVulnerability VULN-9100D75C
 VULN-9100D75C mapsToTechnique T1071
 VULN-9100D75C isExploitedBy FIN7
 4. Load into graph
+
+## 6. Required Columns
+
+### Asset Columns
+
+- asset_id
+- asset_name
+- asset_type
+
+### Vulnerability Columns
+
+- vulnerability_id
+- vulnerability_name
+- vulnerability_description
+- severity
+- patch_available
+
+### ThreatActor Columns
+
+- threat_actor_id
+- threat_actor
+- actor_motivation
+- actor_category
+
+### MITRETechnique Columns
+
+- mitre_technique_id
+- mitre_technique
+- mitre_tactic
