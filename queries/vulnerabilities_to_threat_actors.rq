@@ -1,0 +1,7 @@
+PREFIX cyber: <http://example.org/cyber#>
+
+SELECT ?vulnerability ?threat_actor
+WHERE {
+    ?vulnerability cyber:isExploitedBy ?threat_actor.
+}
+

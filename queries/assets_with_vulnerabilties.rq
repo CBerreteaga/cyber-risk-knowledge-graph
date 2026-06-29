@@ -1,0 +1,6 @@
+PREFIX cyber: <https://example.org/cyber#>
+
+SELECT ?asset ?vulnerability
+WHERE {
+    ?asset cyber:hasVulnerability ?vulnerability.
+}

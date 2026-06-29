@@ -1,0 +1,6 @@
+PREFIX cyber: <http://example.org/cyber#>
+
+SELECT ?vulnerability ?mitre_technique
+WHERE {
+    ?vulnerability cyber:mapsToTechnique ?mitre_technique.
+}
