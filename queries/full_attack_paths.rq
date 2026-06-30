@@ -1,0 +1,19 @@
+PREFIX cyber: <http://example.org/cyber#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?asset ?asset_type ?finding ?vulnerability ?severity ?risk_score ?mitre_technique ?threat_actor
+WHERE {
+    ?finding a cyber:Finding .
+    ?finding cyber:severity ?severity .
+    ?finding cyber:riskScore ?risk_score .
+    ?finding cyber:hasVulnerability ?vulnerability .
+    ?finding cyber:mapsToTechnique ?mitre_technique .
+    ?finding cyber:isExploitedBy ?threat_actor .
+
+    ?asset cyber:hasFinding ?finding .
+    ?asset cyber:assetType ?asset_type .
+
+    FILTER(?severity = "Critical")
+    FILTER(xsd:decimal(?risk_score) >= 80)
+}
+LIMIT 10

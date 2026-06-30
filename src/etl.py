@@ -125,8 +125,8 @@ def transform_data(records):
         # Core relationships
         transformed_records.append((asset, "hasFinding", finding, "uri"))
         transformed_records.append((finding, "hasVulnerability", vulnerability, "uri"))
-        transformed_records.append((vulnerability, "mapsToTechnique", mitre_technique, "uri"))
-        transformed_records.append((vulnerability, "isExploitedBy", threat_actor, "uri"))
+        transformed_records.append((finding, "mapsToTechnique", mitre_technique, "uri"))
+        transformed_records.append((finding, "isExploitedBy", threat_actor, "uri"))
 
         # Finding properties
         transformed_records.append((finding, "riskScore", risk_score, "literal"))

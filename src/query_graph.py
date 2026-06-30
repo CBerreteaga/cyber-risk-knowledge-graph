@@ -20,6 +20,10 @@ QUERY_OPTIONS = {
     "3": {
         "name": "Exploitable Assets with patch available",
         "file": "queries/high_risk_findings_exploitable_patch.rq"
+    },
+    "4": {
+        "name": "Full attack paths",
+        "file": "queries/full_attack_paths.rq"
     }
 }
 
