@@ -7,6 +7,7 @@
 # Importing os to keep terminal clean
 import os
 import platform
+import csv
 
 # Need literals to get the plain value/text (properties)
 from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS
@@ -53,63 +54,27 @@ def clear_terminal():
 
 def read_csv_file():
     global extracting_complete
-    lines = []
-    column_names = []
-    rows = []
-    mismatch_count = 0
-    row_data = []
+
     dictionary_array = []
-    csv_file_path = 'data/huge_cyber_risk_knowledge_graph_dataset.csv'
+    csv_file_path = "data/huge_cyber_risk_knowledge_graph_dataset.csv"
 
-    # Open the file
-    file = open(csv_file_path, 'r')
-    print("File opened successfully.")
+    print("Opening CSV file...")
 
+    with open(csv_file_path, "r", encoding="utf-8", newline="") as file:
+        reader = csv.DictReader(file)
 
-    # Read content of file
-    for line in file:
-        lines.append(line.strip()) 
-            
+        rows = list(reader)
+        rows_count = len(rows)
 
-    # Close the file
-    file.close()
-    print("File closed successfully.")
+        for index, row in enumerate(rows, start=1):
+            dictionary_array.append(row)
+            calculate_percentage_complete(index, rows_count)
 
-    column_names = lines[0].split(',')
-    rows = lines[1:]
-
-    rows_processed = 0
-    rows_count = len(rows)
-
-    for row in rows:
-        row_data = row.split(',')
-        d = {}
-
-        if len(row_data) != len(column_names):
-            print("Row Length Mismatch:", len(row_data), "Expected:", len(column_names))
-            mismatch_count += 1
-        i = 0
-
-        for column in column_names:
-    
-            if i < len(row_data):
-                d[column] = row_data[i]
-                ##print(f"{column}: {row_data[i]}")
-            else:
-                d[column] = "MISSING"   
-                ##print(f"{column}: MISSING")
-            i += 1
-
-        dictionary_array.append(d)
-
-        rows_processed += 1
-
-        calculate_percentage_complete(rows_processed, rows_count)
-
-    ##print("Extraction Complete")
-    ##print("Mismatch Count:", mismatch_count)
-    ##print("Total records:", len(dictionary_array))
     extracting_complete = True
+
+    print("Extraction complete.")
+    print("Total records:", len(dictionary_array))
+
     return dictionary_array
 
 def transform_data(records):
@@ -211,8 +176,8 @@ def load_data(transformed_records):
     #Prinouts
     print("ETL Process Complete")
     print("Graph Size:", len(rdf_graph))
-    print("RDF Graph saved to data/cyber_knowledge_graph.ttl")
-
+    print("RDF Graph saved to output/cyber_knowledge_graph.ttl")
+ 
     return 0
 
 if __name__ == "__main__":
