@@ -1,0 +1,12 @@
+PREFIX cyber: <http://example.org/cyber#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?vulnerability ?vulnerability_label ?severity ?patch_available
+WHERE {
+    ?vulnerability a cyber:Vulnerability . 
+    ?vulnerability rdfs:label ?vulnerability_label .
+    ?vulnerability cyber:severity ?severity .
+    ?vulnerability cyber:patchAvailable ?patch_available
+}
+
+LIMIT 10

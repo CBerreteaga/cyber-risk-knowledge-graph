@@ -9,7 +9,7 @@ import os
 import platform
 
 # Need literals to get the plain value/text (properties)
-from rdflib import Graph, Namespace, URIRef, Literal
+from rdflib import Graph, Namespace, URIRef, Literal, RDF, RDFS
 
 extracting_complete = False
 transforming_complete = False
@@ -123,6 +123,16 @@ def transform_data(records):
         mitre_technique = record["mitre_technique_id"]
         threat_actor = record["threat_actor"]
 
+        transformed_records.append((asset, "type", "Asset", "rdf_type"))
+        transformed_records.append((vulnerability, "type", "Vulnerability", "rdf_type"))
+        transformed_records.append((mitre_technique,"type", "MITRETechnique", "rdf_type"))
+        transformed_records.append((threat_actor, "type", "ThreatActor", 'rdf_type'))
+
+        transformed_records.append((asset, "label", asset, "rdfs_label"))
+        transformed_records.append((vulnerability, "label", record["vulnerability_name"], "rdfs_label"))
+        transformed_records.append((mitre_technique, "label", record["mitre_technique"], "rdfs_label"))
+        transformed_records.append((threat_actor, "label", threat_actor, "rdfs_label"))
+
         asset_type = record["asset_type"]
         severity = record["severity"]
         patch_available = record["patch_available"]
@@ -168,6 +178,8 @@ def load_data(transformed_records):
 
     # Binding namespace prefixes for better readability
     rdf_graph.bind("cyber", CYBER)
+    rdf_graph.bind("rdf", RDF)
+    rdf_graph.bind("rdfs", RDFS)
 
     for record in transformed_records:
         subject, predicate, object_value, object_type = record
@@ -177,7 +189,13 @@ def load_data(transformed_records):
 
         if object_type == "uri":
             object_node = URIRef(CYBER[make_uri_safe(object_value)])
-        else:   
+        elif object_type == "rdf_type":
+            predicate_uri = RDF.type
+            object_node = URIRef(CYBER[make_uri_safe(object_value)])
+        elif object_type == "rdfs_label":
+            predicate_uri = RDFS.label
+            object_node = Literal(object_value)
+        else:
             object_node = Literal(object_value)
         
 

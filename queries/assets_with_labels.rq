@@ -1,0 +1,11 @@
+PREFIX cyber: <http://example.org/cyber#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?asset ?asset_label ?asset_type
+WHERE {
+    ?asset a cyber:Asset .
+    ?asset rdfs:label ?asset_label .
+    ?asset cyber:assetType ?asset_type .
+}
+
+LIMIT 10

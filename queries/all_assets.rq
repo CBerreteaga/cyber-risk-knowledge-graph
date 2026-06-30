@@ -1,0 +1,9 @@
+PREFIX cyber: <http://example.org/cyber#>
+
+SELECT ?asset ?asset_type
+WHERE {
+    ?asset a cyber:Asset .
+    ?asset cyber:assetType ?asset_type .
+}
+
+LIMIT 10

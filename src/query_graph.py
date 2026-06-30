@@ -35,6 +35,18 @@ QUERY_OPTIONS = {
     "7": {
         "name": "Critical risk paths",
         "file": "queries/critical_risk_paths.rq"
+    },
+    "8": {
+        "name": "All assets and asset types",
+        "file": "queries/all_assets.rq"
+    },
+    "9": {
+        "name": "Assets w/ labels and types",
+        "file": "queries/assets_with_labels.rq"
+    },
+    "10": {
+        "name": "Vulnerabilities with labels",
+        "file": "queries/vulnerabilities_with_labels.rq"
     }
 }
 
@@ -110,7 +122,8 @@ def show_menu():
     for key, value in QUERY_OPTIONS.items():
         print(f"{key}. {value['name']}")
 
-    print("0. Exit Program")
+    print("-----------------------------------------")
+    print("Press CTRL+C to Exit Program")
 
 
 def get_user_choice():
@@ -189,10 +202,6 @@ def run_query_menu(graph):
         show_menu()
 
         choice = get_user_choice()
-
-        if choice == "0":
-            print("Exiting query tool.")
-            break
 
         selected_query = QUERY_OPTIONS.get(choice)
 
