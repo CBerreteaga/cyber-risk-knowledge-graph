@@ -167,25 +167,39 @@ def run_query(graph, query_file_path):
 def print_results(results):
     """
     Prints SPARQL query results as a clean table with column headers.
+    Shows progress while collecting, formatting, and printing results.
     """
     print("------------------------------------------")
-    print("Results")
+    print("Preparing results for display...")
     print("------------------------------------------")
 
-    rows = list(results)
+    # Step 1: Collect rows
+    print("Collecting result rows...", end="", flush=True)
+
+    rows = []
+
+    for row in results:
+        rows.append(row)
+
+        if len(rows) % 10 == 0:
+            print(f"\rCollecting result rows... {len(rows)} rows", end="", flush=True)
+
+    print(f"\rCollected {len(rows)} result rows.          ")
 
     if len(rows) == 0:
         print("No results found.")
         print("------------------------------------------")
         return
 
-    # Get column names from the SPARQL SELECT variables
+    # Step 2: Get column headers
     headers = [str(variable) for variable in results.vars]
 
-    # Clean all row values
+    # Step 3: Clean values
+    print("Formatting result rows...", end="", flush=True)
+
     cleaned_rows = []
 
-    for row in rows:
+    for row_number, row in enumerate(rows, start=1):
         cleaned_row = []
 
         for value in row:
@@ -193,7 +207,17 @@ def print_results(results):
 
         cleaned_rows.append(cleaned_row)
 
-    # Calculate column widths
+        print(
+            f"\rFormatting result rows... {row_number}/{len(rows)}",
+            end="",
+            flush=True
+        )
+
+    print("\rFormatting result rows... complete.        ")
+
+    # Step 4: Calculate column widths
+    print("Building table...", end="", flush=True)
+
     column_widths = []
 
     for column_index, header in enumerate(headers):
@@ -207,7 +231,14 @@ def print_results(results):
 
         column_widths.append(max_width)
 
-    # Print header row
+    print("\rBuilding table... complete.        ")
+
+    # Step 5: Print table
+    print("------------------------------------------")
+    print("Results")
+    print("------------------------------------------")
+
+    # Header row
     header_parts = []
 
     for index, header in enumerate(headers):
@@ -215,7 +246,7 @@ def print_results(results):
 
     print(" | ".join(header_parts))
 
-    # Print separator row
+    # Separator row
     separator_parts = []
 
     for width in column_widths:
@@ -223,16 +254,22 @@ def print_results(results):
 
     print("-+-".join(separator_parts))
 
-    # Print data rows
-    for row in cleaned_rows:
+    table_lines = []
+
+    for row_number, row in enumerate(cleaned_rows, start=1):
         row_parts = []
 
         for index, value in enumerate(row):
             row_parts.append(value.ljust(column_widths[index]))
 
-        print(" | ".join(row_parts))
+        table_lines.append(" | ".join(row_parts))
+
+    for line in table_lines:
+        print(line)
 
     print("------------------------------------------")
+    
+    
     
 
 

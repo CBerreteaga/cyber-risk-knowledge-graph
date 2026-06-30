@@ -12,9 +12,10 @@ WHERE {
     ?finding cyber:riskScore ?risk_score .
     ?finding cyber:likelihood ?likelihood .
     ?finding cyber:impact ?impact .
+    ?finding cyber:severity ?severity .
+
 
     ?vulnerability a cyber:Vulnerability .
-    ?vulnerability cyber:severity ?severity .
 
 }
 LIMIT 10

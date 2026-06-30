@@ -134,12 +134,10 @@ def transform_data(records):
         transformed_records.append((finding, "impact", impact, "literal"))
         transformed_records.append((finding, "patchAvailable", patch_available, "literal"))
         transformed_records.append((finding, "exploitAvailable", exploit_available, "literal"))
+        transformed_records.append((finding, "severity", severity, "literal"))
         
         # Asset properties
         transformed_records.append((asset, "assetType", asset_type, "literal"))
-
-        # Vulnerability properties
-        transformed_records.append((vulnerability, "severity", severity, "literal"))
 
         # Threat actor properties
         transformed_records.append((threat_actor, "actorCategory", actor_category, "literal"))
