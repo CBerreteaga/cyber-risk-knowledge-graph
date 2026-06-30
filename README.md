@@ -2,26 +2,30 @@
 
 ## Project Overview
 
-The Cyber Risk Knowledge Graph is a Python-based ETL and RDF graph project that transforms cybersecurity data from a CSV file into RDF triples. The final graph can be queried with SPARQL to identify relationships between assets, vulnerabilities, MITRE ATT&CK techniques, and threat actors.
+The Cyber Risk Knowledge Graph is a Python-based ETL and RDF graph project that transforms cybersecurity risk data from a CSV file into RDF triples. The final graph can be queried with SPARQL to analyze relationships between assets, findings, vulnerabilities, MITRE ATT&CK techniques, and threat actors.
 
-The purpose of this project is to practice building a cybersecurity data pipeline while learning how knowledge graphs can be used to connect and query security-related information.
+The purpose of this project is to practice building a cybersecurity data pipeline while learning how knowledge graphs can connect security data in a way that supports risk analysis and investigation.
 
 ## Why I Built This
 
 I built this project to gain hands-on experience with:
 
 * ETL pipeline development
+* CSV parsing with Python
 * RDF graph construction
+* RDFLib usage
+* Turtle RDF serialization
 * SPARQL querying
 * Cybersecurity data modeling
 * MITRE ATT&CK relationship mapping
 * Threat actor and vulnerability analysis
+* Risk-based security querying
 
 This project helped me understand how raw security data can be transformed into a structured graph that makes relationships easier to analyze.
 
 ## Dataset
 
-The project uses a cybersecurity risk dataset stored as a CSV file. Each row represents a cybersecurity record with information about assets, vulnerabilities, threat actors, MITRE techniques, risk fields, and remediation details.
+The project uses a cybersecurity risk dataset stored as a CSV file. Each row represents a cybersecurity finding that connects an asset to a vulnerability, MITRE ATT&CK technique, threat actor, and risk-related fields.
 
 For version 1 of this project, I focused on the following data fields:
 
@@ -31,13 +35,21 @@ For version 1 of this project, I focused on the following data fields:
 * `asset_name`
 * `asset_type`
 
+### Finding / Risk Fields
+
+* `record_id`
+* `risk_score`
+* `likelihood`
+* `impact`
+* `patch_available`
+* `exploit_available`
+
 ### Vulnerability Fields
 
 * `vulnerability_id`
 * `vulnerability_name`
 * `vulnerability_description`
 * `severity`
-* `patch_available`
 
 ### Threat Actor Fields
 
@@ -55,7 +67,7 @@ For version 1 of this project, I focused on the following data fields:
 ## Project Structure
 
 ```text
-graph-project/
+cyber-risk-knowledge-graph/
 ├── data/
 │   └── huge_cyber_risk_knowledge_graph_dataset.csv
 ├── docs/
@@ -64,12 +76,8 @@ graph-project/
 ├── output/
 │   └── cyber_knowledge_graph.ttl
 ├── queries/
-│   ├── assets_with_vulnerabilities.rq
-│   ├── vulnerabilities_to_mitre.rq
-│   ├── vulnerabilities_to_threat_actors.rq
-│   ├── critical_vulnerabilities.rq
-│   ├── critical_vulnerabilities_with_mitre.rq
-│   └── critical_risk_paths.rq
+│   ├── highest_risk_assets.rq
+│   └── high_risk_findings_exploitable_no_patch.rq
 ├── src/
 │   ├── etl.py
 │   └── query_graph.py
@@ -88,25 +96,28 @@ Extract → Transform → Load
 
 ### Extract
 
-The extract step reads the CSV file and converts each row into a Python dictionary. Each dictionary uses the CSV column names as keys.
+The extract step reads the CSV file with Python's `csv.DictReader`. Each CSV row is converted into a Python dictionary where the CSV column names are used as dictionary keys.
 
 Example:
 
 ```text
+record_id → FINDING-0001
 asset_name → production-web-server-0229
 vulnerability_id → VULN-9100D75C
 mitre_technique_id → T1071
 threat_actor → FIN7
+risk_score → 95
 ```
 
 ### Transform
 
-The transform step converts each CSV record into RDF-style triples.
+The transform step converts each CSV record into RDF-style triples. The updated model uses a `Finding` node between an `Asset` and a `Vulnerability` so risk fields belong to the specific finding record instead of being attached directly to the vulnerability.
 
-Example relationship triples:
+Core relationship triples:
 
 ```text
-Asset hasVulnerability Vulnerability
+Asset hasFinding Finding
+Finding hasVulnerability Vulnerability
 Vulnerability mapsToTechnique MITRETechnique
 Vulnerability isExploitedBy ThreatActor
 ```
@@ -115,10 +126,28 @@ Example property triples:
 
 ```text
 Asset assetType "server"
+Finding riskScore "95"
+Finding likelihood "High"
+Finding impact "High"
+Finding patchAvailable "False"
+Finding exploitAvailable "True"
 Vulnerability severity "Critical"
-Vulnerability patchAvailable "True"
 ThreatActor actorCategory "Ransomware"
 MITRETechnique mitreTactic "Defense Evasion"
+```
+
+The ETL also adds RDF classes with `rdf:type` and readable names with `rdfs:label`.
+
+Example:
+
+```turtle
+cyber:production-web-server-0229 a cyber:Asset ;
+    rdfs:label "production-web-server-0229" ;
+    cyber:assetType "server" .
+
+cyber:FINDING-0001 a cyber:Finding ;
+    cyber:hasVulnerability cyber:VULN-9100D75C ;
+    cyber:riskScore "95" .
 ```
 
 ### Load
@@ -133,10 +162,11 @@ output/cyber_knowledge_graph.ttl
 
 ## Ontology Design
 
-Version 1 of the ontology focuses on four main classes:
+Version 1 of the ontology focuses on five main classes:
 
 ```text
 Asset
+Finding
 Vulnerability
 ThreatActor
 MITRETechnique
@@ -147,12 +177,13 @@ MITRETechnique
 The graph uses the following core relationships:
 
 ```text
-Asset hasVulnerability Vulnerability
+Asset hasFinding Finding
+Finding hasVulnerability Vulnerability
 Vulnerability mapsToTechnique MITRETechnique
 Vulnerability isExploitedBy ThreatActor
 ```
 
-These relationships allow the graph to connect vulnerable systems, known vulnerabilities, MITRE ATT&CK techniques, and threat actors.
+These relationships allow the graph to connect vulnerable systems, specific risk findings, known vulnerabilities, MITRE ATT&CK techniques, and threat actors.
 
 ## Properties
 
@@ -164,11 +195,20 @@ The graph also stores properties as literal values.
 assetType
 ```
 
+### Finding Properties
+
+```text
+riskScore
+likelihood
+impact
+patchAvailable
+exploitAvailable
+```
+
 ### Vulnerability Properties
 
 ```text
 severity
-patchAvailable
 ```
 
 ### Threat Actor Properties
@@ -191,132 +231,103 @@ Example RDF-style output:
 
 ```turtle
 @prefix cyber: <http://example.org/cyber#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-cyber:production-web-server-0229 cyber:hasVulnerability cyber:VULN-9100D75C .
-cyber:VULN-9100D75C cyber:mapsToTechnique cyber:T1071 .
-cyber:VULN-9100D75C cyber:isExploitedBy cyber:FIN7 .
-cyber:VULN-9100D75C cyber:severity "Critical" .
-cyber:production-web-server-0229 cyber:assetType "server" .
+cyber:production-web-server-0229 a cyber:Asset ;
+    rdfs:label "production-web-server-0229" ;
+    cyber:assetType "server" ;
+    cyber:hasFinding cyber:FINDING-0001 .
+
+cyber:FINDING-0001 a cyber:Finding ;
+    cyber:hasVulnerability cyber:VULN-9100D75C ;
+    cyber:riskScore "95" ;
+    cyber:likelihood "High" ;
+    cyber:impact "High" ;
+    cyber:patchAvailable "False" ;
+    cyber:exploitAvailable "True" .
+
+cyber:VULN-9100D75C a cyber:Vulnerability ;
+    rdfs:label "Example Vulnerability" ;
+    cyber:severity "Critical" ;
+    cyber:mapsToTechnique cyber:T1071 ;
+    cyber:isExploitedBy cyber:FIN7 .
 ```
 
 ## SPARQL Queries
 
-This project includes several SPARQL queries.
+The project now focuses on fewer, stronger risk-based SPARQL queries instead of many small demo queries.
 
-### 1. Assets With Vulnerabilities
+### 1. Sample High-Risk Asset Findings
 
-Find assets and the vulnerabilities connected to them.
-
-```sparql
-PREFIX cyber: <http://example.org/cyber#>
-
-SELECT ?asset ?vulnerability
-WHERE {
-    ?asset cyber:hasVulnerability ?vulnerability .
-}
-LIMIT 10
-```
-
-### 2. Vulnerabilities Mapped to MITRE Techniques
-
-Find vulnerabilities and the MITRE ATT&CK techniques they map to.
+Find assets, findings, vulnerabilities, and risk values.
 
 ```sparql
 PREFIX cyber: <http://example.org/cyber#>
 
-SELECT ?vulnerability ?mitre_technique
+SELECT ?asset ?asset_type ?finding ?vulnerability ?severity ?risk_score ?likelihood ?impact
 WHERE {
-    ?vulnerability cyber:mapsToTechnique ?mitre_technique .
-}
-LIMIT 10
-```
+    ?asset a cyber:Asset .
+    ?asset cyber:assetType ?asset_type .
+    ?asset cyber:hasFinding ?finding .
 
-### 3. Vulnerabilities Exploited by Threat Actors
+    ?finding a cyber:Finding .
+    ?finding cyber:hasVulnerability ?vulnerability .
+    ?finding cyber:riskScore ?risk_score .
+    ?finding cyber:likelihood ?likelihood .
+    ?finding cyber:impact ?impact .
 
-Find vulnerabilities and the threat actors that exploit them.
-
-```sparql
-PREFIX cyber: <http://example.org/cyber#>
-
-SELECT ?vulnerability ?threat_actor
-WHERE {
-    ?vulnerability cyber:isExploitedBy ?threat_actor .
-}
-LIMIT 10
-```
-
-### 4. Critical Vulnerabilities
-
-Find vulnerabilities where the severity is Critical.
-
-```sparql
-PREFIX cyber: <http://example.org/cyber#>
-
-SELECT ?vulnerability ?severity
-WHERE {
+    ?vulnerability a cyber:Vulnerability .
     ?vulnerability cyber:severity ?severity .
-    FILTER(?severity = "Critical")
 }
 LIMIT 10
 ```
 
-### 5. Critical Vulnerabilities With MITRE Techniques
+### 2. High-Risk Exploitable Findings With No Patch
 
-Find Critical vulnerabilities and the MITRE ATT&CK techniques they map to.
+Find findings where an exploit is available, no patch is available, and the risk score is high.
 
 ```sparql
 PREFIX cyber: <http://example.org/cyber#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?vulnerability ?severity ?mitre_technique
+SELECT ?asset ?asset_type ?finding ?vulnerability ?severity ?exploit_available ?patch_available ?risk_score
 WHERE {
-    ?vulnerability cyber:severity ?severity .
-    ?vulnerability cyber:mapsToTechnique ?mitre_technique .
+    ?asset a cyber:Asset .
+    ?asset cyber:assetType ?asset_type .
+    ?asset cyber:hasFinding ?finding .
 
-    FILTER(?severity = "Critical")
+    ?finding a cyber:Finding .
+    ?finding cyber:hasVulnerability ?vulnerability .
+    ?finding cyber:exploitAvailable ?exploit_available .
+    ?finding cyber:patchAvailable ?patch_available .
+    ?finding cyber:riskScore ?risk_score .
+
+    ?vulnerability a cyber:Vulnerability .
+    ?vulnerability cyber:severity ?severity .
+
+    FILTER(LCASE(STR(?exploit_available)) = "true")
+    FILTER(LCASE(STR(?patch_available)) = "false")
+    FILTER(xsd:decimal(?risk_score) >= 80)
 }
 LIMIT 10
 ```
 
-### 6. Critical Risk Paths
+## Query Performance Note
 
-Find assets with Critical vulnerabilities, the MITRE techniques connected to those vulnerabilities, and the threat actors that exploit them.
-
-```sparql
-PREFIX cyber: <http://example.org/cyber#>
-
-SELECT ?asset ?vulnerability ?severity ?mitre_technique ?threat_actor
-WHERE {
-    ?asset cyber:hasVulnerability ?vulnerability .
-    ?vulnerability cyber:severity ?severity .
-    ?vulnerability cyber:mapsToTechnique ?mitre_technique .
-    ?vulnerability cyber:isExploitedBy ?threat_actor .
-
-    FILTER(?severity = "Critical")
-}
-LIMIT 10
-```
-
-## Example Query Result
-
-Example output from the critical risk path query:
-
-```text
-1 | production-workstation-1160 | VULN-3BF12A40 | Critical | T1087 | BlackCat_Affiliate |
-```
-
-This result shows:
-
-```text
-Asset: production-workstation-1160
-Vulnerability: VULN-3BF12A40
-Severity: Critical
-MITRE Technique: T1087
-Threat Actor: BlackCat_Affiliate
-```
+The project currently uses RDFLib for local graph generation and SPARQL querying. RDFLib works well for learning, prototyping, and smaller local graphs. More complex queries that require numeric casting, sorting, or large joins can be slower. For this version, the queries were simplified to avoid expensive ordering operations and to keep local query execution faster.
 
 ## How to Run the Project
 
 ### 1. Create and activate a virtual environment
+
+Linux/macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Windows Git Bash:
 
 ```bash
 python -m venv .venv
@@ -347,13 +358,7 @@ output/cyber_knowledge_graph.ttl
 python src/query_graph.py
 ```
 
-To run a different query, update the query file path inside `src/query_graph.py`.
-
-Example:
-
-```python
-query_file_path = "queries/critical_risk_paths.rq"
-```
+The query tool displays a menu of available SPARQL queries.
 
 ## Skills Demonstrated
 
@@ -361,13 +366,16 @@ This project demonstrates:
 
 * Python scripting
 * ETL pipeline design
-* CSV parsing
+* CSV parsing with `csv.DictReader`
 * RDF graph construction
 * RDFLib usage
+* RDF classes with `rdf:type`
+* Human-readable labels with `rdfs:label`
 * Turtle RDF serialization
 * SPARQL querying
 * Ontology planning
 * Cybersecurity data modeling
+* Risk finding modeling
 * MITRE ATT&CK relationship mapping
 * Vulnerability and threat actor analysis
 
@@ -375,16 +383,13 @@ This project demonstrates:
 
 Future versions of this project could include:
 
-* Using `csv.DictReader` for more robust CSV parsing
-* Adding RDF classes with `rdf:type`
-* Adding readable labels with `rdfs:label`
-* Using threat actor IDs as URI nodes and actor names as labels
+* Using stronger URI design with IDs as URI nodes and names as labels
 * Adding more asset properties such as environment, region, and internet-facing status
-* Adding risk score, likelihood, and impact fields
-* Creating more advanced SPARQL queries
+* Adding remediation status and SLA-based prioritization
+* Creating a full attack-path query from asset to finding to vulnerability to MITRE technique to threat actor
 * Exporting query results to CSV
 * Building a small dashboard or visualization layer
-* Loading the graph into a triplestore such as Apache Jena Fuseki
+* Loading the graph into a dedicated triple store for better query performance
 
 ## Project Status
 
@@ -392,9 +397,11 @@ Version 1 is complete.
 
 The project currently supports:
 
-* CSV extraction
+* CSV extraction with `csv.DictReader`
 * Triple transformation
 * RDF graph loading
+* RDF classes with `rdf:type`
+* Readable labels with `rdfs:label`
 * Turtle graph output
 * SPARQL query execution
-* Relationship and property-based graph queries
+* Risk-focused graph queries

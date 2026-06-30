@@ -1,0 +1,20 @@
+PREFIX cyber: <http://example.org/cyber#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?asset ?asset_type ?finding ?vulnerability ?severity ?risk_score ?likelihood ?impact
+WHERE {
+    ?asset a cyber:Asset .
+    ?asset cyber:assetType ?asset_type .
+    ?asset cyber:hasFinding ?finding .
+
+    ?finding a cyber:Finding .
+    ?finding cyber:hasVulnerability ?vulnerability .
+    ?finding cyber:riskScore ?risk_score .
+    ?finding cyber:likelihood ?likelihood .
+    ?finding cyber:impact ?impact .
+
+    ?vulnerability a cyber:Vulnerability .
+    ?vulnerability cyber:severity ?severity .
+
+}
+LIMIT 10

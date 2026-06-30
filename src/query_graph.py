@@ -1,5 +1,6 @@
 from rdflib import Graph
-
+import time
+import threading
 
 # ------------------------------------------------------------
 # Configuration
@@ -9,44 +10,16 @@ GRAPH_FILE_PATH = "output/cyber_knowledge_graph.ttl"
 
 QUERY_OPTIONS = {
     "1": {
-        "name": "Assets with vulnerabilities",
-        "file": "queries/assets_with_vulnerabilities.rq"
+        "name": "High-Risk Assets",
+        "file": "queries/highest_risk_assets.rq"
     },
     "2": {
-        "name": "Assets with patchable vulnerabilities",
-        "file": "queries/assets_with_vulnerabilities_patchable.rq"
+        "name": "Exploitable Assets with no patch",
+        "file": "queries/high_risk_findings_exploitable_no_patch.rq"
     },
     "3": {
-        "name": "Vulnerabilities mapped to MITRE techniques",
-        "file": "queries/vulnerabilities_to_mitre.rq"
-    },
-    "4": {
-        "name": "Vulnerabilities exploited by threat actors",
-        "file": "queries/vulnerabilities_to_threat_actors.rq"
-    },
-    "5": {
-        "name": "Critical vulnerabilities",
-        "file": "queries/critical_vulnerabilities.rq"
-    },
-    "6": {
-        "name": "Critical vulnerabilities with MITRE techniques",
-        "file": "queries/critical_vulnerabilities_with_mitre.rq"
-    },
-    "7": {
-        "name": "Critical risk paths",
-        "file": "queries/critical_risk_paths.rq"
-    },
-    "8": {
-        "name": "All assets and asset types",
-        "file": "queries/all_assets.rq"
-    },
-    "9": {
-        "name": "Assets w/ labels and types",
-        "file": "queries/assets_with_labels.rq"
-    },
-    "10": {
-        "name": "Vulnerabilities with labels",
-        "file": "queries/vulnerabilities_with_labels.rq"
+        "name": "Exploitable Assets with patch available",
+        "file": "queries/high_risk_findings_exploitable_patch.rq"
     }
 }
 
@@ -54,6 +27,21 @@ QUERY_OPTIONS = {
 # ------------------------------------------------------------
 # Helper Functions
 # ------------------------------------------------------------
+def show_spinner(stop_event):
+    "Shows a simple loading spinner while query is running"
+    spinner = ["|","/","-", "\\"]
+
+    index = 0
+
+    while not stop_event.is_set():
+        print(f"\rQuery running...{spinner[index % len(spinner)]}", end = "", flush = True)
+        time.sleep(0.2)
+        index +=1
+
+    print("\rQuery completed.           ")
+
+
+
 
 def print_banner():
     """
@@ -152,43 +140,100 @@ def load_query(query_file_path):
 def run_query(graph, query_file_path):
     """
     Loads and runs a SPARQL query against the RDF graph.
-
-    Args:
-        graph: RDFLib Graph object.
-        query_file_path: Path to the SPARQL query file.
-
-    Returns:
-        Query results from RDFLib.
     """
     query = load_query(query_file_path)
-    results = graph.query(query)
+
+    stop_event = threading.Event()
+    spinner_thread = threading.Thread(target=show_spinner, args=(stop_event,))
+
+    start_time = time.time()
+
+    spinner_thread.start()
+
+    try:
+        results = graph.query(query)
+    finally:
+        stop_event.set()
+        spinner_thread.join()
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print(f"Query completed in {elapsed_time:.2f} seconds.")
+
     return results
 
 
 def print_results(results):
     """
-    Prints SPARQL query results in a readable format.
+    Prints SPARQL query results as a clean table with column headers.
     """
     print("------------------------------------------")
     print("Results")
     print("------------------------------------------")
 
-    result_count = 1
+    rows = list(results)
 
-    for row in results:
-        print("--------------------------------------------------------------------------------------")
-        print(result_count, "|", end=" ")
+    if len(rows) == 0:
+        print("No results found.")
+        print("------------------------------------------")
+        return
+
+    # Get column names from the SPARQL SELECT variables
+    headers = [str(variable) for variable in results.vars]
+
+    # Clean all row values
+    cleaned_rows = []
+
+    for row in rows:
+        cleaned_row = []
 
         for value in row:
-            print(clean_uri(value), end=" | ")
+            cleaned_row.append(clean_uri(value))
 
-        print()
-        result_count += 1
+        cleaned_rows.append(cleaned_row)
 
-    if result_count == 1:
-        print("No results found.")
+    # Calculate column widths
+    column_widths = []
 
-    print("--------------------------------------------------------------------------------------")
+    for column_index, header in enumerate(headers):
+        max_width = len(header)
+
+        for row in cleaned_rows:
+            value_width = len(row[column_index])
+
+            if value_width > max_width:
+                max_width = value_width
+
+        column_widths.append(max_width)
+
+    # Print header row
+    header_parts = []
+
+    for index, header in enumerate(headers):
+        header_parts.append(header.ljust(column_widths[index]))
+
+    print(" | ".join(header_parts))
+
+    # Print separator row
+    separator_parts = []
+
+    for width in column_widths:
+        separator_parts.append("-" * width)
+
+    print("-+-".join(separator_parts))
+
+    # Print data rows
+    for row in cleaned_rows:
+        row_parts = []
+
+        for index, value in enumerate(row):
+            row_parts.append(value.ljust(column_widths[index]))
+
+        print(" | ".join(row_parts))
+
+    print("------------------------------------------")
+    
 
 
 def run_query_menu(graph):

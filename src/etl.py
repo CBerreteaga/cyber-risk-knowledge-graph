@@ -79,52 +79,75 @@ def read_csv_file():
 
 def transform_data(records):
     global transforming_complete
+
     transformed_records = []
-    # Placeholder for transformation logic
-    records_processed= 0
+    records_processed = 0
+
     for record in records:
+        # Finding field
+        finding = record["record_id"]
+        # Asset fields
         asset = record["asset_name"]
-        vulnerability = record["vulnerability_id"]
-        mitre_technique = record["mitre_technique_id"]
-        threat_actor = record["threat_actor"]
-
-        transformed_records.append((asset, "type", "Asset", "rdf_type"))
-        transformed_records.append((vulnerability, "type", "Vulnerability", "rdf_type"))
-        transformed_records.append((mitre_technique,"type", "MITRETechnique", "rdf_type"))
-        transformed_records.append((threat_actor, "type", "ThreatActor", 'rdf_type'))
-
-        transformed_records.append((asset, "label", asset, "rdfs_label"))
-        transformed_records.append((vulnerability, "label", record["vulnerability_name"], "rdfs_label"))
-        transformed_records.append((mitre_technique, "label", record["mitre_technique"], "rdfs_label"))
-        transformed_records.append((threat_actor, "label", threat_actor, "rdfs_label"))
-
         asset_type = record["asset_type"]
+
+        # Vulnerability fields
+        vulnerability = record["vulnerability_id"]
+        vulnerability_name = record["vulnerability_name"]
         severity = record["severity"]
         patch_available = record["patch_available"]
-        actor_category = record["actor_category"]
+        exploit_available = record["exploit_available"]
+        risk_score = record["risk_score"]
+        likelihood = record["likelihood"]
+        impact = record["impact"]
+
+        # MITRE technique fields
+        mitre_technique = record["mitre_technique_id"]
+        mitre_technique_name = record["mitre_technique"]
         mitre_tactic = record["mitre_tactic"]
 
-        '''
-        print("-----------------------------------------")
-        print(f"{asset} hasVulnerability {vulnerability}")
-        print(f"{vulnerability} mapsToTechnique {mitre_technique}")
-        print(f"{vulnerability} isExploitedBy {threat_actor}")
-        '''
+        # Threat actor fields
+        threat_actor = record["threat_actor"]
+        actor_category = record["actor_category"]
 
-        transformed_records.append((asset, "hasVulnerability", vulnerability, "uri"))
+        # Entity type triples
+        transformed_records.append((finding, "type", "Finding", "rdf_type"))
+        transformed_records.append((asset, "type", "Asset", "rdf_type"))
+        transformed_records.append((vulnerability, "type", "Vulnerability", "rdf_type"))
+        transformed_records.append((mitre_technique, "type", "MITRETechnique", "rdf_type"))
+        transformed_records.append((threat_actor, "type", "ThreatActor", "rdf_type"))
+
+        # Human-readable labels
+        transformed_records.append((asset, "label", asset, "rdfs_label"))
+        transformed_records.append((vulnerability, "label", vulnerability_name, "rdfs_label"))
+        transformed_records.append((mitre_technique, "label", mitre_technique_name, "rdfs_label"))
+        transformed_records.append((threat_actor, "label", threat_actor, "rdfs_label"))
+
+        # Core relationships
+        transformed_records.append((asset, "hasFinding", finding, "uri"))
+        transformed_records.append((finding, "hasVulnerability", vulnerability, "uri"))
         transformed_records.append((vulnerability, "mapsToTechnique", mitre_technique, "uri"))
         transformed_records.append((vulnerability, "isExploitedBy", threat_actor, "uri"))
 
+        # Finding properties
+        transformed_records.append((finding, "riskScore", risk_score, "literal"))
+        transformed_records.append((finding, "likelihood", likelihood, "literal"))
+        transformed_records.append((finding, "impact", impact, "literal"))
+        transformed_records.append((finding, "patchAvailable", patch_available, "literal"))
+        transformed_records.append((finding, "exploitAvailable", exploit_available, "literal"))
+        
+        # Asset properties
         transformed_records.append((asset, "assetType", asset_type, "literal"))
+
+        # Vulnerability properties
         transformed_records.append((vulnerability, "severity", severity, "literal"))
-        transformed_records.append((vulnerability, "patchAvailable", patch_available, "literal"))
+
+        # Threat actor properties
         transformed_records.append((threat_actor, "actorCategory", actor_category, "literal"))
+
+        # MITRE technique properties
         transformed_records.append((mitre_technique, "mitreTactic", mitre_tactic, "literal"))
 
-
-        
         records_processed += 1
-        
         calculate_percentage_complete(records_processed, len(records))
 
     transforming_complete = True
